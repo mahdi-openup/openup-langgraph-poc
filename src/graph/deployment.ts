@@ -1,16 +1,14 @@
 /**
  * LangGraph Platform Deployment Entry Point
- * 
+ *
  * This file exports the compiled graph for LangGraph Platform.
  * The circuit breaker logic is integrated into the graph itself.
  */
 
-import { StateGraph, START, END } from '@langchain/langgraph';
-import { AIMessage, HumanMessage } from '@langchain/core/messages';
-import { Annotation } from '@langchain/langgraph';
+import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
+import { AIMessage, ToolMessage } from '@langchain/core/messages';
 import type { BaseMessage } from '@langchain/core/messages';
 import { ChatOpenAI } from '@langchain/openai';
-import { ToolMessage } from '@langchain/core/messages';
 import { allTools, toolsByName } from '../tools/definitions.js';
 import { ORCHESTRATOR_PROMPT } from '../prompts/orchestrator.js';
 import { EMERGENCY_PROMPT } from '../prompts/emergency.js';
@@ -70,8 +68,8 @@ const orchestratorModel = new ChatOpenAI({
 // Emergency check node (fast)
 async function emergencyNode(state: GraphStateType): Promise<Partial<GraphStateType>> {
   const lastMessage = state.messages[state.messages.length - 1];
-  
-  if (!lastMessage || lastMessage._getType() !== 'human') {
+
+  if (!lastMessage || lastMessage.getType() !== 'human') {
     return { isEmergency: false, emergencyChecked: true };
   }
 
@@ -80,7 +78,7 @@ async function emergencyNode(state: GraphStateType): Promise<Partial<GraphStateT
       { role: 'system', content: EMERGENCY_PROMPT },
       { role: 'user', content: lastMessage.content as string },
     ]);
-    
+
     const result = JSON.parse(response.content as string);
     return { isEmergency: result.isEmergency === true, emergencyChecked: true };
   } catch (error) {
@@ -106,8 +104,8 @@ Are you safe right now? Is someone with you?`,
 
 // Orchestrator node
 async function orchestratorNode(state: GraphStateType): Promise<Partial<GraphStateType>> {
-  const systemPrompt = ORCHESTRATOR_PROMPT.replace(
-    /{conversationLanguage}/g,
+  const systemPrompt = ORCHESTRATOR_PROMPT.replaceAll(
+    '{conversationLanguage}',
     state.conversationLanguage
   );
 
@@ -135,15 +133,15 @@ async function orchestratorNode(state: GraphStateType): Promise<Partial<GraphSta
 
 // Tool executor node
 async function toolsNode(state: GraphStateType): Promise<Partial<GraphStateType>> {
-  const lastMessage = state.messages[state.messages.length - 1];
-  
-  if (lastMessage?._getType() !== 'ai') return {};
-  
+  const lastMessage = state.messages.at(-1);
+
+  if (lastMessage?.getType() !== 'ai') return {};
+
   const aiMessage = lastMessage as AIMessage;
   if (!aiMessage.tool_calls?.length) return {};
 
   const results: ToolMessage[] = [];
-  
+
   for (const call of aiMessage.tool_calls) {
     const tool = toolsByName[call.name];
     if (!tool) {
@@ -153,7 +151,7 @@ async function toolsNode(state: GraphStateType): Promise<Partial<GraphStateType>
       }));
       continue;
     }
-    
+
     try {
       const result = await tool.invoke(call.args);
       results.push(new ToolMessage({
@@ -180,15 +178,15 @@ function routeAfterEmergency(state: GraphStateType): 'emergency_response' | 'orc
 }
 
 function shouldContinueOrchestrator(state: GraphStateType): 'tools' | '__end__' {
-  const lastMessage = state.messages[state.messages.length - 1];
-  
-  if (lastMessage?._getType() === 'ai') {
+  const lastMessage = state.messages.at(-1);
+
+  if (lastMessage?.getType() === 'ai') {
     const aiMsg = lastMessage as AIMessage;
     if (aiMsg.tool_calls?.length) {
       return 'tools';
     }
   }
-  
+
   return '__end__';
 }
 
@@ -202,7 +200,7 @@ const workflow = new StateGraph(GraphState)
   .addNode('emergency_response', emergencyResponseNode)
   .addNode('orchestrator', orchestratorNode)
   .addNode('tools', toolsNode)
-  
+
   // Flow
   .addEdge(START, 'emergency_check')
   .addConditionalEdges('emergency_check', routeAfterEmergency, {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { tool } from '@langchain/core/tools';
+import { tool, StructuredTool } from '@langchain/core/tools';
 import type { ContentItem, Expert } from '../types/index.js';
 
 // Tool: Search for content
@@ -34,7 +34,7 @@ export const searchContentTool = tool(
     schema: z.object({
       topic: z.string().describe('The wellbeing topic to search for'),
       contentType: z.enum(['article', 'video']).optional().describe('Preferred content type if user specified'),
-      language: z.string().optional().describe('Preferred language (e.g., en-GB, nl-NL) if user specified'),
+      language: z.string().nullable().optional().describe('Preferred language (e.g., en-GB, nl-NL) if user specified'),
     }),
   }
 );
@@ -43,7 +43,7 @@ export const searchContentTool = tool(
 export const searchExpertsTool = tool(
   async ({ sessionType, summary, language }) => {
     // TODO: Replace with actual Azure AI Search
-    console.log(`[Tool] Searching experts: ${sessionType}, summary: ${summary}`);
+    console.log(`[Tool] Searching experts: ${sessionType}, summary: ${summary}, language: ${language}`);
 
     // Mock results
     const experts: Expert[] = [
@@ -73,7 +73,8 @@ export const searchExpertsTool = tool(
         'general = mental/emotional wellbeing (stress, anxiety, burnout, relationships). physical-wellbeing = body-focused (nutrition, exercise, sleep habits, energy)'
       ),
       summary: z.string().describe('Brief summary of what user wants to discuss, for matching'),
-      language: z.string().optional().describe('Preferred session language if user specified'),
+      language: z.string().nullable
+      ().optional().describe('Preferred session language if user specified'),
     }),
   }
 );
@@ -99,6 +100,6 @@ export const allTools = [
   needsClarificationTool,
 ];
 
-export const toolsByName = Object.fromEntries(
+export const toolsByName: Record<string, StructuredTool> = Object.fromEntries(
   allTools.map((t) => [t.name, t])
 );
