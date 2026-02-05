@@ -1,0 +1,10 @@
+{
+  "$schema": "https://langchain-ai.github.io/langgraph/schemas/langgraph.schema.json",
+  "node_version": "20",
+  "dockerfile_lines": [],
+  "graphs": {
+    "openup_chatbot": "./src/graph/deployment.ts:graph"
+  },
+  "env": ".env",
+  "dependencies": ["."]
+}

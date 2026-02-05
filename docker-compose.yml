@@ -1,0 +1,17 @@
+# Local LangGraph server for development
+# Run: docker-compose up
+
+version: '3.8'
+
+services:
+  langgraph-api:
+    image: langchain/langgraph-api:latest
+    ports:
+      - "8123:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_TRACING_V2=true
+    volumes:
+      - .:/app
+    working_dir: /app
