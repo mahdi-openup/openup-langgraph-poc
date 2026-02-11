@@ -29,12 +29,14 @@ function validateAzureConfig(): void {
 export function createFastModel() {
   validateAzureConfig();
 
+  const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_FAST ?? "gpt-5-mini";
   return new AzureChatOpenAI({
     // REQUIRED: Azure deployment configuration
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY!,
     azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT??"https://openup-ai-production.cognitiveservices.azure.com/",
-    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_FAST??"gpt-5-mini",
+    azureOpenAIApiDeploymentName: deploymentName,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION??"2024-12-01-preview",
+    model: deploymentName, // Used for LangSmith logging metadata
   });
 }
 
@@ -45,11 +47,13 @@ export function createFastModel() {
 export function createNonStreamingFastModel() {
   validateAzureConfig();
 
+  const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_FAST ?? "gpt-5-mini";
   return new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY!,
     azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT??"https://openup-ai-production.cognitiveservices.azure.com/",
-    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_FAST??"gpt-5-mini",
+    azureOpenAIApiDeploymentName: deploymentName,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION??"2024-12-01-preview",
+    model: deploymentName, // Used for LangSmith logging metadata
     streaming: false, // Disable streaming to prevent token-by-token output
   });
 }
@@ -61,12 +65,14 @@ export function createNonStreamingFastModel() {
 export function createOrchestratorModel(): Runnable<BaseMessage[], BaseMessage> {
   validateAzureConfig();
 
+  const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_MAIN ?? "gpt-5-mini";
   return new AzureChatOpenAI({
     // REQUIRED: Azure deployment configuration
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY!,
     azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT??"https://openup-ai-production.cognitiveservices.azure.com/",
-    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_MAIN??"gpt-5-mini",
+    azureOpenAIApiDeploymentName: deploymentName,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION??"2024-12-01-preview",
+    model: deploymentName, // Used for LangSmith logging metadata
     streaming: false, // Disable streaming to ensure complete tool calls
   }).bindTools(allTools);
 }
