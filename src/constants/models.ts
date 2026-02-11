@@ -11,10 +11,6 @@ import { allTools } from '../tools/definitions.js';
 function validateAzureConfig(): void {
   const required = [
     'AZURE_OPENAI_API_KEY',
-    'AZURE_OPENAI_ENDPOINT',
-    'AZURE_OPENAI_API_VERSION',
-    'AZURE_OPENAI_DEPLOYMENT_FAST',
-    'AZURE_OPENAI_DEPLOYMENT_MAIN',
   ];
 
   const missing = required.filter(key => !process.env[key]);
@@ -36,9 +32,9 @@ export function createFastModel() {
   return new AzureChatOpenAI({
     // REQUIRED: Azure deployment configuration
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY!,
-    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT!,
-    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_FAST!,
-    azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION!,
+    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT??"https://openup-ai-production.cognitiveservices.azure.com/",
+    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_FAST??"gpt-5-mini",
+    azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION??"2024-12-01-preview",
   });
 }
 
@@ -51,9 +47,9 @@ export function createNonStreamingFastModel() {
 
   return new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY!,
-    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT!,
-    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_FAST!,
-    azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION!,
+    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT??"https://openup-ai-production.cognitiveservices.azure.com/",
+    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_FAST??"gpt-5-mini",
+    azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION??"2024-12-01-preview",
     streaming: false, // Disable streaming to prevent token-by-token output
   });
 }
@@ -68,9 +64,9 @@ export function createOrchestratorModel(): Runnable<BaseMessage[], BaseMessage> 
   return new AzureChatOpenAI({
     // REQUIRED: Azure deployment configuration
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY!,
-    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT!,
-    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_MAIN!,
-    azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION!,
+    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT??"https://openup-ai-production.cognitiveservices.azure.com/",
+    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_MAIN??"gpt-5-mini",
+    azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION??"2024-12-01-preview",
     streaming: false, // Disable streaming to ensure complete tool calls
   }).bindTools(allTools);
 }

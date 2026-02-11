@@ -49,7 +49,7 @@ export class AzureAiSearchClient {
   private readonly apiVersion: string;
 
   constructor(config?: AzureSearchConfig) {
-    this.endpoint = config?.endpoint ?? process.env.AZURE_SEARCH_ENDPOINT ?? '';
+    this.endpoint = config?.endpoint ?? process.env.AZURE_SEARCH_ENDPOINT ?? "https://openup-search-standard-test.search.windows.net";
     this.apiKey = config?.apiKey ?? process.env.AZURE_SEARCH_API_KEY ?? '';
     // Use 2024-07-01 for vector search support
     this.apiVersion = config?.apiVersion ?? '2024-07-01';
@@ -149,8 +149,8 @@ export class AzureAiSearchClient {
 
 export const CONTENT_INDEX_CONFIG: SearchIndexConfig = {
   indexName: process.env.AZURE_SEARCH_CONTENT_INDEX ?? 'contents-index',
-  useSemanticSearch: process.env.AZURE_SEARCH_USE_SEMANTIC === 'true',
-  semanticConfigurationName: process.env.AZURE_SEARCH_SEMANTIC_CONFIG ?? 'default',
+  useSemanticSearch: process.env.AZURE_SEARCH_USE_SEMANTIC !== 'false',
+  semanticConfigurationName: process.env.AZURE_SEARCH_SEMANTIC_CONFIG ?? 'contents-semantic-ranker',
   // Match C# ContentSearchResultItem fields (PascalCase in Azure)
   defaultSelect: ['Id', 'Title', 'BodyMetadata', 'Themes', 'Audience', 'Type', 'DurationInSeconds', 'Language'],
   // Match C# vector search configuration
@@ -162,8 +162,8 @@ export const CONTENT_INDEX_CONFIG: SearchIndexConfig = {
 
 export const EXPERT_INDEX_CONFIG: SearchIndexConfig = {
   indexName: process.env.AZURE_SEARCH_EXPERT_INDEX ?? 'expert-index',
-  useSemanticSearch: process.env.AZURE_SEARCH_USE_SEMANTIC === 'true',
-  semanticConfigurationName: process.env.AZURE_SEARCH_SEMANTIC_CONFIG ?? 'default',
+  useSemanticSearch: process.env.AZURE_SEARCH_USE_SEMANTIC !== 'false',
+  semanticConfigurationName: process.env.AZURE_SEARCH_SEMANTIC_CONFIG ?? 'contents-semantic-ranker',
   defaultSelect: ['id', 'name', 'title', 'specializations', 'languages', 'imageUrl', 'rating', 'bio'],
 };
 

@@ -67,7 +67,7 @@ export const CONTENT_INDEX_CONFIG: SearchIndexConfig = {
 };
 
 export const EXPERT_INDEX_CONFIG: SearchIndexConfig = {
-  indexName: process.env.AZURE_SEARCH_EXPERT_INDEX ?? 'expert-index',
+  indexName: process.env.AZURE_SEARCH_EXPERT_INDEX ?? 'experts-index',
   useSemanticSearch: process.env.AZURE_SEARCH_USE_SEMANTIC === 'true',
   semanticConfigurationName: 'default',
   defaultSelect: ['id', 'name', 'title', 'specializations', 'languages', 'imageUrl', 'rating', 'bio'],
