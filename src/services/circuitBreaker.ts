@@ -1,16 +1,12 @@
+// src/services/circuitBreaker.ts
 import { checkEmergency } from './emergency.js';
 import type { ChatResponse, CircuitBreakerConfig } from '../types/index.js';
+import { CRISIS_RESOURCES, EMERGENCY_MESSAGE } from '../constants/emergency.js';
 
 const EMERGENCY_RESPONSE: ChatResponse = {
-  message: `I'm concerned about what you're sharing. Your safety matters most right now.
-
-If you're in immediate danger, please reach out:
-• Netherlands: 113 (Zelfmoordpreventie)
-• Belgium: 1813
-• UK: 116 123 (Samaritans)
-• International: Your local emergency services
-
-Are you safe right now? Is someone with you?`,
+  message: EMERGENCY_MESSAGE,
+  messageType: 'emergency',
+  payload: CRISIS_RESOURCES,
   isEmergency: true,
 };
 
@@ -36,7 +32,7 @@ type RaceResult = TaggedEmergency | TaggedOrchestrator | TaggedTimeout;
 
 /**
  * Circuit breaker that races emergency check against orchestrator.
- * 
+ *
  * - If emergency=true finishes first → immediately return emergency response
  * - If orchestrator finishes first → check emergency result (likely done)
  * - If emergency times out → proceed with orchestrator (log late detection)
@@ -81,7 +77,7 @@ export async function withEmergencyCircuitBreaker(
   if (firstResult.source === 'emergency' && !firstResult.isEmergency) {
     console.log('[CircuitBreaker] Emergency clear, waiting for orchestrator');
     const message = await orchestratorPromise;
-    return { message, isEmergency: false };
+    return { message, messageType: 'text', payload: null, isEmergency: false };
   }
 
   // CASE 3: Orchestrator finished first → check emergency (probably done)
@@ -99,7 +95,7 @@ export async function withEmergencyCircuitBreaker(
       return EMERGENCY_RESPONSE;
     }
 
-    return { message: firstResult.message, isEmergency: false };
+    return { message: firstResult.message, messageType: 'text', payload: null, isEmergency: false };
   }
 
   // CASE 4: Emergency timed out → proceed with orchestrator
@@ -115,7 +111,7 @@ export async function withEmergencyCircuitBreaker(
       }
     });
 
-    return { message, isEmergency: false };
+    return { message, messageType: 'text', payload: null, isEmergency: false };
   }
 
   throw new Error('Unexpected circuit breaker state');

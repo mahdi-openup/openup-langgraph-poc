@@ -2,23 +2,22 @@
   "name": "openup-langgraph-poc",
   "version": "1.0.0",
   "type": "module",
-"scripts": {
-    "dev": "tsx watch src/index.ts",
+  "scripts": {
+    "dev": "npx @langchain/langgraph-cli dev",
+    "dev:open": "npx @langchain/langgraph-cli dev --open",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "test": "tsx src/index.ts",
-    "server": "tsx src/server.ts",
-    "server:prod": "node dist/server.js",
-    "studio": "npx @langchain/langgraph-cli dev"
+    "test": "tsx src/index.ts"
   },
   "dependencies": {
-    "@langchain/core": "^0.3.0",
-    "@langchain/langgraph": "^0.2.0",
-    "@langchain/openai": "^0.3.0",
+    "@langchain/core": "^1.1.20",
+    "@langchain/langgraph": "^1.1.4",
+    "@langchain/langgraph-checkpoint": "^1.0.0",
+    "@langchain/openai": "^1.2.6",
+    "dotenv": "^17.2.3",
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@langchain/langgraph-cli": "^0.0.1",
+    "@langchain/langgraph-cli": "^1.1.12",
     "@types/node": "^20.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"

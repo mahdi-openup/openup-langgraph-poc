@@ -1,130 +1,206 @@
-import { HumanMessage, AIMessage } from '@langchain/core/messages';
+// src/types/index.ts
+// Extensible Type System for Multiple Message Types
+
 import type { BaseMessage } from '@langchain/core/messages';
-import { createOrchestratorGraph } from './graph/index.js';
-import { withEmergencyCircuitBreaker } from './services/circuitBreaker.js';
-import type { ChatResponse, ChatOptions } from './types/index.js';
 
-const graph = createOrchestratorGraph();
+// ============================================
+// MESSAGE TYPES - Extensible Union
+// ============================================
 
-/**
- * Main chat function with emergency circuit breaker
- */
-export async function chat(
-  userMessage: string,
-  options: ChatOptions = {}
-): Promise<ChatResponse> {
-  const {
-    conversationLanguage = 'en-GB',
-    conversationId = crypto.randomUUID(),
-    conversationHistory = [],
-  } = options;
+export type MessageType =
+  | 'text'                    // Default text response
+  | 'emergency'               // Crisis response with resources
+  | 'expert_profiles'         // Expert cards for selection
+  | 'expert_availability'     // Time slot selection
+  | 'session_booked'          // Booking confirmation
+  | 'content_recommendations'; // Articles/videos list
 
-  const messages: BaseMessage[] = [
-    ...conversationHistory,
-    new HumanMessage(userMessage),
-  ];
+// ============================================
+// PAYLOAD TYPES - Data for each message type
+// ============================================
 
-  // Orchestrator function (to be raced against emergency check)
-  const runOrchestrator = async (): Promise<string> => {
-    const result = await graph.invoke({
-      messages,
-      conversationLanguage,
-      conversationId,
-    });
+// Emergency
+export interface CrisisResource {
+  name: string;
+  number: string;
+  label: string;
+  country?: string;
+}
 
-    return result.responseMessage || "I'm here to help. What's on your mind?";
+export interface EmergencyPayload {
+  severity: 'high' | 'medium';
+  resources: CrisisResource[];
+  safetyQuestion?: string;
+}
+
+// Expert Profile
+export interface Expert {
+  id: string;
+  name: string;
+  title: string;
+  specializations: string[];
+  languages: string[];
+  imageUrl?: string;
+  rating?: number;
+  bio?: string;
+}
+
+export interface ExpertProfilesPayload {
+  experts: Expert[];
+  searchCriteria?: {
+    sessionType: SessionType;
+    topic?: string;
   };
-
-  // Run with circuit breaker
-  return withEmergencyCircuitBreaker(userMessage, runOrchestrator, {
-    emergencyTimeoutMs: 2000,
-  });
 }
 
-/**
- * Convert simple message history to LangChain format
- */
-export function toMessages(
-  history: Array<{ role: 'user' | 'assistant'; content: string }>
-): BaseMessage[] {
-  return history.map((msg) =>
-    msg.role === 'user'
-      ? new HumanMessage(msg.content)
-      : new AIMessage(msg.content)
-  );
+// Expert Availability
+export interface TimeSlot {
+  id: string;
+  expertId: string;
+  startTime: string;  // ISO datetime
+  endTime: string;
+  available: boolean;
+}
+
+export interface ExpertAvailabilityPayload {
+  expert: Expert;
+  slots: TimeSlot[];
+  timezone: string;
+}
+
+// Session Booked
+export interface BookedSession {
+  sessionId: string;
+  expert: Expert;
+  slot: TimeSlot;
+  sessionType: SessionType;
+  meetingUrl?: string;
+  calendarLink?: string;
+}
+
+export interface SessionBookedPayload {
+  session: BookedSession;
+  confirmationMessage: string;
+}
+
+// Content Recommendations
+export interface ContentItem {
+  id: string;
+  title: string;
+  description?: string;
+  type: 'articles' | 'videos';  // Matches Azure index values (plural)
+  topic: string;
+  duration?: string;
+  thumbnailUrl?: string;
+  url: string;
+  language: string;
+}
+
+export interface ContentRecommendationsPayload {
+  items: ContentItem[];
+  topic: string;
+  totalCount?: number;
 }
 
 // ============================================
-// Test scenarios
+// MESSAGE PAYLOAD MAP - Type-safe mapping
 // ============================================
-async function main() {
-  console.log('\n' + '='.repeat(60));
-  console.log('OpenUp LangGraph PoC - Circuit Breaker Pattern');
-  console.log('='.repeat(60));
 
-  // Test 1: Normal stress message
-  console.log('\n📝 Test 1: Normal stress message');
-  console.log('-'.repeat(40));
-  const start1 = Date.now();
-  const result1 = await chat("I've been really stressed about work lately and can't focus");
-  console.log(`⏱️  Time: ${Date.now() - start1}ms`);
-  console.log(`🚨 Emergency: ${result1.isEmergency}`);
-  console.log(`💬 Response: ${result1.message}`);
-
-  // Test 2: Content request
-  console.log('\n📝 Test 2: Content request');
-  console.log('-'.repeat(40));
-  const start2 = Date.now();
-  const result2 = await chat('Do you have any videos about managing anxiety?');
-  console.log(`⏱️  Time: ${Date.now() - start2}ms`);
-  console.log(`🚨 Emergency: ${result2.isEmergency}`);
-  console.log(`💬 Response: ${result2.message}`);
-
-  // Test 3: Book session
-  console.log('\n📝 Test 3: Book session request');
-  console.log('-'.repeat(40));
-  const start3 = Date.now();
-  const result3 = await chat('I want to talk to someone about my burnout');
-  console.log(`⏱️  Time: ${Date.now() - start3}ms`);
-  console.log(`🚨 Emergency: ${result3.isEmergency}`);
-  console.log(`💬 Response: ${result3.message}`);
-
-  // Test 4: Emergency message (should trip circuit)
-  console.log('\n📝 Test 4: Emergency message (circuit should trip)');
-  console.log('-'.repeat(40));
-  const start4 = Date.now();
-  const result4 = await chat("I can't do this anymore. I want to disappear.");
-  console.log(`⏱️  Time: ${Date.now() - start4}ms`);
-  console.log(`🚨 Emergency: ${result4.isEmergency}`);
-  console.log(`💬 Response: ${result4.message}`);
-
-  // Test 5: Multi-turn conversation
-  console.log('\n📝 Test 5: Multi-turn conversation');
-  console.log('-'.repeat(40));
-  const history = toMessages([
-    { role: 'user', content: 'I have trouble sleeping' },
-    { role: 'assistant', content: 'I hear you. Sleep issues can be really draining. Is this related to stress or more about your sleep habits and routine?' },
-  ]);
-  const start5 = Date.now();
-  const result5 = await chat("It's mostly stress from work, my mind races at night", {
-    conversationHistory: history,
-  });
-  console.log(`⏱️  Time: ${Date.now() - start5}ms`);
-  console.log(`🚨 Emergency: ${result5.isEmergency}`);
-  console.log(`💬 Response: ${result5.message}`);
-
-  // Test 6: Off-scope request
-  console.log('\n📝 Test 6: Off-scope request');
-  console.log('-'.repeat(40));
-  const start6 = Date.now();
-  const result6 = await chat('Can you give me a recipe for lasagna?');
-  console.log(`⏱️  Time: ${Date.now() - start6}ms`);
-  console.log(`🚨 Emergency: ${result6.isEmergency}`);
-  console.log(`💬 Response: ${result6.message}`);
-
-  console.log('\n' + '='.repeat(60));
-  console.log('Tests complete!');
-  console.log('='.repeat(60) + '\n');
+export interface MessagePayloadMap {
+  text: null;
+  emergency: EmergencyPayload;
+  expert_profiles: ExpertProfilesPayload;
+  expert_availability: ExpertAvailabilityPayload;
+  session_booked: SessionBookedPayload;
+  content_recommendations: ContentRecommendationsPayload;
 }
 
-main().catch(console.error);
+// ============================================
+// STRUCTURED MESSAGE - Generic typed message
+// ============================================
+
+export interface StructuredMessage<T extends MessageType = MessageType> {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  type: T;
+  content: string;  // Always have text content
+  payload: MessagePayloadMap[T];
+  timestamp: number;
+}
+
+// Helper type for creating messages
+export type TextMessage = StructuredMessage<'text'>;
+export type EmergencyMessage = StructuredMessage<'emergency'>;
+export type ExpertProfilesMessage = StructuredMessage<'expert_profiles'>;
+export type ExpertAvailabilityMessage = StructuredMessage<'expert_availability'>;
+export type SessionBookedMessage = StructuredMessage<'session_booked'>;
+export type ContentRecommendationsMessage = StructuredMessage<'content_recommendations'>;
+
+// ============================================
+// INTENT & SESSION TYPES
+// ============================================
+
+export type UserIntent =
+  | 'ContentRecommendation'
+  | 'BookSession'
+  | 'SelectExpert'
+  | 'SelectTimeSlot'
+  | 'ConfirmBooking'
+  | 'ClarificationNeeded'
+  | 'OffScope';
+
+export type SessionType = 'general' | 'physical-wellbeing';
+
+// ============================================
+// GRAPH STATE TYPES
+// ============================================
+
+export interface ConversationState {
+  // Current flow
+  intent: UserIntent | null;
+  sessionType: SessionType | null;
+
+  // Selected items (for multi-step flows)
+  selectedExpertId: string | null;
+  selectedSlotId: string | null;
+
+  // Search context
+  contentTopic: string | null;
+  conversationSummary: string | null;
+
+  // Results cache
+  experts: Expert[];
+  timeSlots: TimeSlot[];
+  contentItems: ContentItem[];
+
+  // Emergency
+  isEmergency: boolean;
+}
+
+// ============================================
+// TOOL RESULT TYPE - What tools return
+// ============================================
+
+export interface ToolResult<T extends MessageType = MessageType> {
+  messageType: T;
+  payload: MessagePayloadMap[T];
+  textContent: string;  // Conversational text to accompany the data
+}
+
+// ============================================
+// CHAT API TYPES
+// ============================================
+
+export interface ChatOptions {
+  conversationLanguage?: string;
+  conversationId?: string;
+  conversationHistory?: BaseMessage[];
+}
+
+export interface ChatResponse {
+  message: string;
+  messageType: MessageType;
+  payload: MessagePayloadMap[MessageType] | null;
+  isEmergency: boolean;
+  state?: Partial<ConversationState>;
+}

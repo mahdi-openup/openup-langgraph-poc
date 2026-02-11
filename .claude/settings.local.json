@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "WebFetch(domain:docs.ag-ui.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:ai-sdk.dev)",
+      "Bash(dir:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm build:*)",
+      "Bash(timeout 5 pnpm dev:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm update:*)",
+      "Bash(pnpm studio --help:*)",
+      "Bash(where:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:langchain-ai.github.io)",
+      "WebFetch(domain:www.swarnendu.de)",
+      "Bash(powershell -Command:*)",
+      "WebFetch(domain:hub.docker.com)",
+      "WebFetch(domain:ilkersigirci.github.io)",
+      "Bash(docker ps:*)"
+    ]
+  }
+}

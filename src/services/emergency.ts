@@ -1,14 +1,10 @@
-import { ChatOpenAI } from '@langchain/openai';
+// src/services/emergency.ts
 import { EMERGENCY_PROMPT } from '../prompts/emergency.js';
-
-const fastModel = new ChatOpenAI({
-  modelName: 'gpt-4o-mini',
-  temperature: 0,
-  maxTokens: 20,
-});
+import { getFastModel } from '../constants/models.js';
 
 export async function checkEmergency(message: string): Promise<boolean> {
   try {
+    const fastModel = getFastModel();
     const response = await fastModel.invoke([
       { role: 'system', content: EMERGENCY_PROMPT },
       { role: 'user', content: message },
